@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>图书管理系统 - 首页</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: "微软雅黑";
+            background: #f5f5f5;
+        }
+        .header {
+            background: #667eea;
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .logo { font-size: 20px; font-weight: bold; }
+        .user-info { display: flex; align-items: center; gap: 15px; }
+        .user-info button {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            padding: 5px 15px;
+            border-radius: 20px;
+            color: white;
+            cursor: pointer;
+        }
+        .user-info button:hover { background: rgba(255,255,255,0.3); }
+        .sidebar {
+            width: 150px;
+            background: white;
+            position: fixed;
+            left: 0;
+            top: 60px;
+            bottom: 0;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.05);
+        }
+        .sidebar ul {
+            list-style: none;
+            padding: 20px 0;
+        }
+        .sidebar li {
+            padding: 12px 25px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .sidebar li:hover {
+            background: #f0f0ff;
+            color: #667eea;
+        }
+        .sidebar li.active {
+            background: #f0f0ff;
+            color: #667eea;
+            border-left: 3px solid #667eea;
+        }
+        .main-content {
+            margin-left: 150px;
+            padding: 20px;
+            min-height: calc(100vh - 60px);
+        }
+        iframe {
+            width: 100%;
+            height: calc(100vh - 100px);
+            border: none;
+            background: white;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+<div class="header">
+    <div class="logo">图书管理系统</div>
+    <div class="user-info">
+        <span id="username">用户</span>
+        <span id="roleTag"></span>
+        <button onclick="logout()">退出登录</button>
+    </div>
+</div>
+
+<div class="sidebar">
+    <ul id="menuList">
+        <li data-page="bookList" class="active">图书列表</li>
+        <li id="adminMenu" data-page="bookManage" style="display:none;">图书管理</li>
+    </ul>
+</div>
+
+<div class="main-content">
+    <iframe id="contentFrame" src="book/list.html"></iframe>
+</div>
+
+<script>
+    var ctx = window.location.pathname.substring(0, window.location.pathname.indexOf('/', 1));
+    if (ctx === '/pages') ctx = '';
+    var currentRole = null;
+
+    var pageMap = {
+        'bookList': ctx + '/pages/book/list.html',
+        'myBorrows': ctx + '/pages/borrow/list.html',
+        'bookManage': ctx + '/pages/book/manage.html',
+        'borrowManage': ctx + '/pages/borrow/manage.html'
+    };
+    function checkLogin() {
+        fetch(ctx + '/checkLogin')
+            .then(res => res.json())
+            .then(data => {
+                if (data.code === 200) {
+                    currentRole = data.role;
+                    document.getElementById('username').innerText = data.username;
+                    document.getElementById('roleTag').innerHTML = currentRole === 'admin' ? '管理员' : '普通用户';
+
+                    if (currentRole === 'admin') {
+                        document.getElementById('adminMenu').style.display = 'block';
+                    }
+                } else {
+                    window.location.href = ctx + '/pages/login.html';
+                }
+            })
+            .catch(() => {
+                window.location.href = ctx + '/pages/login.html';
+            });
+    }
+
+    function loadPage(pageId) {
+        var iframe = document.getElementById('contentFrame');
+        if (pageMap[pageId]) {
+            iframe.src = pageMap[pageId];
+        }
+
+        document.querySelectorAll('.sidebar li').forEach(li => {
+            li.classList.remove('active');
+            if (li.getAttribute('data-page') === pageId) {
+                li.classList.add('active');
+            }
+        });
+    }
+
+    function logout() {
+        fetch(ctx + '/logout')
+            .then(() => {
+                window.location.href = ctx + '/pages/login.html';
+            });
+    }
+
+    document.querySelectorAll('.sidebar li').forEach(item => {
+        item.addEventListener('click', function() {
+            var pageId = this.getAttribute('data-page');
+            if (pageId) {
+                loadPage(pageId);
+            }
+        });
+    });
+    <ul id="menuList">
+        <li data-page="bookList" className="active">图书列表</li>
+        <li data-page="myBorrows">我的借阅</li>
+        <li id="adminMenu" data-page="bookManage" style="display:none;">图书管理</li>
+        <li id="adminBorrowMenu" data-page="borrowManage" style="display:none;">借阅管理</li>
+    </ul>
+    checkLogin();{if (currentRole === 'admin') {
+        document.getElementById('adminMenu').style.display = 'block';
+        document.getElementById('adminBorrowMenu').style.display = 'block';
+    }
+    }
+</script>
+</body>
+</html>

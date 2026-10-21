@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.hy.dao.BorrowRecordMapper">
+
+    <!-- 根据用户ID查询借阅记录 -->
+    <select id="findByUserId" resultType="cn.hy.domain.BorrowRecord">
+        SELECT br.*, b.title as bookTitle, u.username as userName
+        FROM borrow_record br
+                 JOIN book b ON br.book_id = b.id
+                 JOIN user u ON br.user_id = u.id
+        WHERE br.user_id = #{userId}
+        ORDER BY br.borrow_date DESC
+    </select>
+
+    <!-- 查询所有借阅记录 -->
+    <select id="findAll" resultType="cn.hy.domain.BorrowRecord">
+        SELECT br.*, b.title as bookTitle, u.username as userName
+        FROM borrow_record br
+                 JOIN book b ON br.book_id = b.id
+                 JOIN user u ON br.user_id = u.id
+        ORDER BY br.borrow_date DESC
+    </select>
+
+    <!-- 添加借阅记录 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO borrow_record (user_id, book_id, due_date, status)
+        VALUES (#{userId}, #{bookId}, #{dueDate}, #{status})
+    </insert>
+
+    <!-- 更新借阅记录 -->
+    <update id="update">
+        UPDATE borrow_record
+        SET return_date = #{returnDate}, status = #{status}
+        WHERE id = #{id}
+    </update>
+
+</mapper>

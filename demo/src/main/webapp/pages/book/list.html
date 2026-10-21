@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>图书列表</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: "微软雅黑";
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .card h3 {
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+<div class="card">
+    <h3>图书列表</h3>
+    <div id="bookTable"></div>
+</div>
+
+<script>
+    function getContextPath() {
+        var path = window.location.pathname;
+        // 如果在 iframe 中，使用顶层窗口的路径
+        if (window.parent !== window) {
+            path = window.parent.location.pathname;
+        }
+        var ctx = path.substring(0, path.indexOf('/', 1));
+        if (ctx === '/pages') {
+            ctx = '';
+        }
+        return ctx;
+    }
+
+    var ctx = getContextPath();
+    console.log("图书列表页面 ctx = " + ctx);
+
+    function loadBooks() {
+        fetch(ctx + '/books')
+            .then(res => res.json())
+            .then(data => {
+                var books = data.data || [];
+                var html = `<table><thead>
+                   <tr><th>ID</th><th>书名</th><th>作者</th><th>出版社</th><th>价格</th><th>库存</th><th>操作</th></tr>
+                </thead><tbody>`;
+
+                if (books.length > 0) {
+                    books.forEach(book => {
+                        html += `<tr>
+                            <td>${book.id}</td>
+                            <td>${book.title}</td>
+                            <td>${book.author || '-'}</td>
+                            <td>${book.publisher || '-'}</td>
+                            <td>¥${book.price}</td>
+                            <td>${book.stock}</td>
+                            <td>
+                                <button class="btn btn-primary" onclick="borrowBook(${book.id})">借阅</button>
+                            </td>
+                        </tr>`;
+                    });
+                } else {
+                    html += `<tr><td colspan="6" style="text-align:center">暂无数据</td></tr>`;
+                }
+                html += `</tbody></table>`;
+                document.getElementById('bookTable').innerHTML = html;
+            });
+    }
+
+    loadBooks();
+    // 借阅函数
+    function borrowBook(bookId) {
+        if (!confirm('确定要借阅这本书吗？')) return;
+
+        var formData = new URLSearchParams();
+        formData.append('bookId', bookId);
+
+        fetch(ctx + '/borrow', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: formData
+        })
+            .then(res => res.json())
+            .then(data => {
+                alert(data.message);
+                if (data.code === 200) {
+                    loadBooks();  // 刷新列表，更新库存
+                }
+            })
+            .catch(error => {
+                console.error('借书失败：', error);
+                alert('借书失败，请稍后重试');
+            });
+    }
+
+</script>
+</body>
+</html>
